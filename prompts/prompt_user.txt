@@ -1,0 +1,6 @@
+Pesquise notícias do mercado financeiro brasileiro publicadas nas últimas {{JANELA_HORAS}} horas,
+considerando a data/hora de execução: {{DATA_HORA_EXECUCAO}} (fuso America/Sao_Paulo).
+
+Monte o relatório final seguindo exatamente o formato JSON definido nas instruções
+do sistema, com o campo "noticias" ordenado mentalmente por relevância/prioridade
+(maior impacto no mercado primeiro).

@@ -1,0 +1,12 @@
+# clasp — scriptId local e credenciais (nunca versionar)
+.clasp.json
+.clasprc.json
+
+# Segredos / ambiente local
+.env
+*.key
+
+# Sistema
+desktop.ini
+Thumbs.db
+.DS_Store

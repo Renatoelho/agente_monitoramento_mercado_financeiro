@@ -1,0 +1,5 @@
+# O clasp opera dentro de rootDir (src/). Envie APENAS código e manifesto.
+# Padrões relativos ao rootDir.
+**/*
+!*.gs
+!appsscript.json
