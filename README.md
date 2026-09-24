@@ -343,16 +343,33 @@ projeto Apps Script vinculado e gera o `.clasp.json` local:
 clasp create-script --type sheets --title "Monitoramento Mercado Financeiro" --rootDir src
 ```
 
-**Opção B — manual** (se já tem uma planilha): abra a planilha → *Extensões → Apps
-Script* → *Configurações do projeto* → copie o **ID do script** e crie o
-`.clasp.json` na raiz do repositório:
+**Opção B — manual** (criar a planilha pelo navegador e pegar o ID do Apps Script):
 
-```json
-{
-  "scriptId": "COLE_AQUI_O_ID_DO_SCRIPT",
-  "rootDir": "src"
-}
-```
+1. **Criar a planilha do Google:** acesse <https://sheets.new> (ou
+   <https://drive.google.com> → *Novo → Planilhas Google → Planilha em branco*),
+   logado na conta que vai executar o agente. Dê um nome, ex.:
+   `Monitoramento Mercado Financeiro`.
+2. **Abrir o Apps Script vinculado:** na planilha, menu *Extensões → Apps Script*.
+   Abre uma nova aba com o editor, já **vinculado** a essa planilha (o projeto é
+   criado automaticamente na primeira vez, com um arquivo `Código.gs` de exemplo).
+3. **Copiar o ID do script (Script ID):** no editor, clique no ícone de engrenagem
+   **Configurações do projeto** (menu lateral esquerdo) → seção **IDs** → campo
+   **ID do script** → botão *Copiar*. É um texto longo, algo como
+   `1AbCdEfGh...xyz`.
+
+   > **Atenção:** não confunda com o **ID da planilha** (trecho da URL da planilha
+   > entre `/d/` e `/edit`). O clasp precisa do **ID do script**. Também é possível
+   > achá-lo na URL do editor: `https://script.google.com/home/projects/`**`<ID_DO_SCRIPT>`**`/edit`.
+4. **Criar o `.clasp.json`** na raiz do repositório com o ID copiado:
+
+   ```json
+   {
+     "scriptId": "COLE_AQUI_O_ID_DO_SCRIPT",
+     "rootDir": "src"
+   }
+   ```
+5. Siga para `clasp push` (8.4). O `Código.gs` de exemplo do editor será substituído
+   pelo conteúdo de `src/` (o push sobrescreve os arquivos remotos).
 
 > `.clasp.json` contém o ID do seu projeto e está no `.gitignore`.
 
