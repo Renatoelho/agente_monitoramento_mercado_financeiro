@@ -1,15 +1,17 @@
 /**
  * Setup.gs
- * Preparação da planilha e do segredo (API key). Executado pelo menu
+ * Criação da aba `config` e gravação do segredo (API key). Executado pelo menu
  * "Monitoramento" (Menu.gs) ou diretamente no editor do Apps Script.
  */
 
 /**
- * Cria (ou completa) a aba `config` com as chaves padrão. É idempotente: NUNCA
- * sobrescreve valores que você já editou — só adiciona chaves que faltam.
+ * Cria (ou completa) a aba `config` na planilha do SPREADSHEET_ID (src/Ids.gs) já com
+ * TODOS os parâmetros para preenchimento. É idempotente: NUNCA sobrescreve valores
+ * que você já editou — só adiciona chaves que faltam.
+ * Rode uma vez no editor do Apps Script (selecionar a função > Executar).
  */
-function prepararPlanilha() {
-  const planilha = SpreadsheetApp.getActiveSpreadsheet();
+function criarAbaConfig() {
+  const planilha = abrirPlanilha();
   let aba = planilha.getSheetByName(ABA_CONFIG);
   const nova = !aba;
 
@@ -62,8 +64,8 @@ function salvarApiKey(chave) {
 function listarConfiguracao() {
   const apiKey = PropertiesService.getScriptProperties().getProperty(PROP_API_KEY);
   console.log('ANTHROPIC_API_KEY = ' + (apiKey ? _mascarar(apiKey) : '(NÃO configurada)'));
-  const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ABA_CONFIG);
-  if (!aba) { console.log('Aba "' + ABA_CONFIG + '" não existe — rode prepararPlanilha().'); return; }
+  const aba = abrirPlanilha().getSheetByName(ABA_CONFIG);
+  if (!aba) { console.log('Aba "' + ABA_CONFIG + '" não existe — rode criarAbaConfig().'); return; }
   aba.getRange(2, 1, Math.max(aba.getLastRow() - 1, 1), 2).getValues().forEach(function (l) {
     if (!ehVazio(l[0])) console.log(l[0] + ' = ' + l[1]);
   });

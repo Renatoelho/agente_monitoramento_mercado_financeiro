@@ -3,3 +3,7 @@
 **/*
 !*.gs
 !appsscript.json
+
+# Modelo local (copiar para Ids.gs) — NUNCA enviar junto, senão duplica a constante
+# SPREADSHEET_ID no projeto do Apps Script.
+Ids-Template.gs

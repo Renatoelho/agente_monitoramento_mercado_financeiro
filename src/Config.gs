@@ -3,9 +3,9 @@
  * Carrega e valida a configuração em um objeto `cfg` (congelado).
  *
  * Duas fontes (o projeto é um Apps Script VINCULADO a uma planilha):
- *   1. Aba `config` da própria planilha  -> parâmetros NÃO secretos (e-mails, janela,
- *      modelo, IDs dos prompts no Drive...). Layout: coluna A = chave, B = valor,
- *      C = descrição. A aba é criada por `prepararPlanilha()` (Setup.gs).
+ *   1. Aba `config` da planilha (ID em src/Ids.gs) -> parâmetros NÃO secretos (e-mails,
+ *      janela, modelo, IDs dos prompts no Drive...). Layout: coluna A = chave, B = valor,
+ *      C = descrição. A aba é criada por `criarAbaConfig()` (Setup.gs).
  *   2. Script Properties                 -> SOMENTE o segredo `ANTHROPIC_API_KEY`
  *      (gravado pelo menu "Configurar API key"; nunca fica na planilha nem no código).
  */
@@ -42,6 +42,28 @@ const CONFIG_PADRAO = [
   ['DRIVE_FILE_ID_PROMPT_USER', '',
     'ID do arquivo prompt_user.txt no Google Drive (trecho da URL entre /d/ e /view).']
 ];
+
+/**
+ * Abre a planilha do agente. Usa o `SPREADSHEET_ID` de `src/Ids.gs` (copiado de
+ * Ids-Template.gs); se não estiver preenchido, cai para a planilha à qual o script
+ * está vinculado (container-bound).
+ */
+function abrirPlanilha() {
+  const id = (typeof SPREADSHEET_ID !== 'undefined') ? String(SPREADSHEET_ID).trim() : '';
+  if (id && id.indexOf('COLE_AQUI') === -1) {
+    try {
+      return SpreadsheetApp.openById(id);
+    } catch (err) {
+      throw new ConfigError('Não foi possível abrir a planilha SPREADSHEET_ID=' + id + ' (' + err.message +
+        '). Confira o ID em src/Ids.gs e se a conta tem acesso.');
+    }
+  }
+  const ativa = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ativa) {
+    throw new ConfigError('Planilha não encontrada: preencha SPREADSHEET_ID em src/Ids.gs (copie de Ids-Template.gs).');
+  }
+  return ativa;
+}
 
 const Config = (function () {
 
@@ -92,13 +114,10 @@ const Config = (function () {
 
   /** Lê a aba `config` como { CHAVE: valor }, aplicando os defaults de CONFIG_PADRAO. */
   function _lerAbaConfig() {
-    const planilha = SpreadsheetApp.getActiveSpreadsheet();
-    if (!planilha) {
-      throw new ConfigError('Este script precisa estar vinculado a uma planilha (container-bound).');
-    }
+    const planilha = abrirPlanilha();
     const aba = planilha.getSheetByName(ABA_CONFIG);
     if (!aba) {
-      throw new ConfigError('Aba "' + ABA_CONFIG + '" não encontrada. Use o menu "Monitoramento > Preparar planilha".');
+      throw new ConfigError('Aba "' + ABA_CONFIG + '" não encontrada. Rode a função criarAbaConfig() (ou o menu "Monitoramento > Criar aba config").');
     }
 
     const valores = {};

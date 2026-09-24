@@ -183,8 +183,7 @@ Claude Console (configurações da organização). Se não estiver, a API retorn
   editados numa aba simples, sem mexer em código nem em Script Properties.
 - O **menu** dentro da planilha permite instalar gatilho, gravar a API key e rodar um
   teste com poucos cliques.
-- Um script *container-bound* acessa a planilha com `SpreadsheetApp.getActiveSpreadsheet()`,
-  sem precisar guardar `SPREADSHEET_ID`.
+- O código abre a planilha pelo `SPREADSHEET_ID` cadastrado em `src/Ids.gs` (e, se ele estiver vazio, cai para a planilha vinculada via `getActiveSpreadsheet()`).
 - O deploy continua igual: código em `src/`, versionado no Git e enviado com `clasp push`.
 
 ### 3.2 Escopos OAuth (`src/appsscript.json`)
@@ -217,7 +216,7 @@ executado como a conta que o instalou, e é essa conta que aparece como remetent
 ```
 .
 ├── README.md                 esta documentação (única)
-├── .gitignore                ignora .clasp.json / .clasprc.json
+├── .gitignore                ignora .clasp.json, .clasprc.json e src/Ids.gs
 ├── .claspignore              só envia *.gs e appsscript.json
 ├── assets/
 │   └── email-exemplo.png     imagem do e-mail de exemplo (topo deste README)
@@ -226,10 +225,11 @@ executado como a conta que o instalou, e é essa conta que aparece como remetent
 │   └── prompt_user.txt       modelo do prompt de usuário (subir para o Drive)
 └── src/                      rootDir do clasp
     ├── appsscript.json       manifesto (fuso, V8, escopos)
+    ├── Ids-Template.gs       modelo p/ src/Ids.gs (SPREADSHEET_ID); não é enviado ao clasp
     ├── Util.gs               datas (fuso SP), helpers, escape HTML
     ├── Errors.gs             exceções tipadas por etapa
     ├── Config.gs             lê aba "config" + Script Properties -> cfg congelado
-    ├── Setup.gs              prepararPlanilha(), salvarApiKey(), listarConfiguracao()
+    ├── Setup.gs              criarAbaConfig(), salvarApiKey(), listarConfiguracao()
     ├── Menu.gs               onOpen() e ações do menu "Monitoramento"
     ├── Triggers.gs           instalar/remover/listar gatilho diário
     ├── Orchestrator.gs       monitorarMercadoFinanceiro() — fluxo completo
@@ -250,7 +250,7 @@ congelada (`Object.freeze`), erros tipados com `etapa` (`ConfigError`, `PromptEr
 
 ### 5.1 Aba `config`
 
-Criada pelo menu **Monitoramento → 1. Preparar planilha** (função `prepararPlanilha`,
+Criada pela função `criarAbaConfig()` (executada no editor ou pelo menu **Monitoramento → 1. Criar aba config**; abre a planilha pelo `SPREADSHEET_ID` de `src/Ids.gs`),
 idempotente: nunca sobrescreve o que você editou, só acrescenta chaves que faltam).
 Colunas: `chave` · `valor` · `descricao`.
 
@@ -329,8 +329,7 @@ Para personalizar: edite as constantes de cor no topo do `EmailBuilder.gs`, o
 
 - Conta Google (Gmail ou Workspace) e uma **API key da Anthropic** com créditos.
 - **Node.js** e o **CLASP** instalados (`npm install -g @google/clasp`). Comandos
-  abaixo usam a sintaxe do clasp 3.x (`create-script`, `open-script`, `open-container`;
-  `create` ainda funciona como apelido). Em instalação portátil, use o caminho
+  abaixo usam a sintaxe do clasp 3.x (`open-script`, `open-container`). Em instalação portátil, use o caminho
   completo do executável (ex.: `C:\Users\Renato\tools\node\clasp.cmd`).
 - **Google Apps Script API ligada** para a sua conta em
   <https://script.google.com/home/usersettings> (obrigatório para o clasp).
@@ -351,45 +350,54 @@ clasp login
 Abre o navegador para autorizar o clasp na sua conta Google. As credenciais ficam em
 `~/.clasprc.json` (fora do repositório; também está no `.gitignore`).
 
-### 8.3 Criar a planilha + script vinculado
+### 8.3 Criar a planilha e anotar os dois IDs
 
-**Opção A — automática (recomendada):** cria uma nova planilha no seu Drive já com o
-projeto Apps Script vinculado e gera o `.clasp.json` local:
-
-```powershell
-clasp create-script --type sheets --title "Monitoramento Mercado Financeiro" --rootDir src
-```
-
-**Opção B — manual** (criar a planilha pelo navegador e pegar o ID do Apps Script):
+A planilha é criada **manualmente** no navegador. Você vai precisar anotar **dois IDs**:
+o **ID da planilha** e o **ID do Apps Script**.
 
 1. **Criar a planilha do Google:** acesse <https://sheets.new> (ou
    <https://drive.google.com> → *Novo → Planilhas Google → Planilha em branco*),
    logado na conta que vai executar o agente. Dê um nome, ex.:
-   `Monitoramento Mercado Financeiro`.
-2. **Abrir o Apps Script vinculado:** na planilha, menu *Extensões → Apps Script*.
+   `Monitoramento Mercado Financeiro`. Deixe-a em branco.
+2. **Copiar o ID da planilha:** está na URL da planilha, entre `/d/` e `/edit`:
+   `https://docs.google.com/spreadsheets/d/`**`<ID_DA_PLANILHA>`**`/edit`.
+3. **Abrir o Apps Script vinculado:** na planilha, menu *Extensões → Apps Script*.
    Abre uma nova aba com o editor, já **vinculado** a essa planilha (o projeto é
    criado automaticamente na primeira vez, com um arquivo `Código.gs` de exemplo).
-3. **Copiar o ID do script (Script ID):** no editor, clique no ícone de engrenagem
+4. **Copiar o ID do Apps Script (Script ID):** no editor, clique na engrenagem
    **Configurações do projeto** (menu lateral esquerdo) → seção **IDs** → campo
-   **ID do script** → botão *Copiar*. É um texto longo, algo como
-   `1AbCdEfGh...xyz`.
+   **ID do script** → *Copiar*. Também aparece na URL do editor:
+   `https://script.google.com/home/projects/`**`<ID_DO_SCRIPT>`**`/edit`.
 
-   > **Atenção:** não confunda com o **ID da planilha** (trecho da URL da planilha
-   > entre `/d/` e `/edit`). O clasp precisa do **ID do script**. Também é possível
-   > achá-lo na URL do editor: `https://script.google.com/home/projects/`**`<ID_DO_SCRIPT>`**`/edit`.
-4. **Criar o `.clasp.json`** na raiz do repositório com o ID copiado:
+   > Não confunda os dois: o **ID da planilha** vai em `src/Ids.gs`; o **ID do script**
+   > vai no `.clasp.json`.
+5. **Registrar os IDs localmente** (ambos arquivos estão no `.gitignore`):
 
-   ```json
-   {
-     "scriptId": "COLE_AQUI_O_ID_DO_SCRIPT",
-     "rootDir": "src"
-   }
-   ```
-5. Siga para `clasp push` (8.4). O `Código.gs` de exemplo do editor será substituído
-   pelo conteúdo de `src/` (o push sobrescreve os arquivos remotos).
+   - **ID do Apps Script** → criar `.clasp.json` na raiz do repositório:
 
-> `.clasp.json` contém o ID do seu projeto e está no `.gitignore`.
+     ```json
+     {
+       "scriptId": "COLE_AQUI_O_ID_DO_SCRIPT",
+       "rootDir": "src"
+     }
+     ```
 
+   - **ID da planilha** → copiar o modelo e editar:
+
+     ```powershell
+     Copy-Item src\Ids-Template.gs src\Ids.gs
+     ```
+
+     e em `src/Ids.gs` trocar o valor:
+
+     ```js
+     const SPREADSHEET_ID = 'COLE_AQUI_O_ID_DA_PLANILHA';
+     ```
+
+     (`Ids-Template.gs` não é enviado ao Apps Script — ver `.claspignore`.)
+
+Esses dois IDs são **tudo o que precisa ser cadastrado fora da planilha**; o restante
+da configuração fica na aba `config` (criada pelo próprio código no passo 8.6).
 ### 8.4 Enviar o código
 
 ```powershell
@@ -415,16 +423,18 @@ clasp open-container   # a planilha vinculada
 3. Guarde os dois IDs para o passo 8.7. (A conta dona da planilha precisa ter acesso
    de leitura aos arquivos — normalmente já tem, pois é quem os enviou.)
 
-### 8.6 Configurar a planilha (menu Monitoramento)
+### 8.6 Criar a aba `config` e gravar a API key
 
-Recarregue a planilha (F5). O menu **Monitoramento** aparece após alguns segundos.
-
-1. **1. Preparar planilha (aba config)** — cria a aba `config` com as chaves padrão.
-   Na **primeira vez**, o Google pede autorização dos escopos da seção 3.2 → *Revisar
-   permissões* → escolher a conta → *Avançado → Ir para (projeto) → Permitir*
-   (aviso de "app não verificado" é esperado: o script é seu).
-2. **2. Configurar API key da Anthropic** — cole a chave `sk-ant-...`.
-
+1. No editor do Apps Script (`clasp open-script`), selecione a função
+   **`criarAbaConfig`** na barra superior e clique em **Executar**. Ela abre a
+   planilha pelo `SPREADSHEET_ID` e cria a aba `config` **já com todos os parâmetros**
+   para preenchimento (seção 5.1).
+   Na **primeira execução** o Google pede autorização dos escopos da seção 3.2 →
+   *Revisar permissões* → escolher a conta → *Avançado → Ir para (projeto) →
+   Permitir* (o aviso de "app não verificado" é esperado: o script é seu).
+2. Recarregue a planilha (F5): aparece o menu **Monitoramento**. (A mesma criação da
+   aba também está em *Monitoramento → 1. Criar aba config*.)
+3. **Monitoramento → 2. Configurar API key da Anthropic** — cole a chave `sk-ant-...`.
 ### 8.7 Preencher a aba `config`
 
 Edite a coluna `valor`:
@@ -456,7 +466,6 @@ Para trazer alterações feitas direto no editor: `clasp pull`.
 
 ```powershell
 clasp login                 # autenticar
-clasp create-script --type sheets --title "..." --rootDir src
 clasp push                  # enviar código
 clasp pull                  # trazer código do editor
 clasp open-script           # abrir o editor do Apps Script
@@ -520,7 +529,7 @@ ver [quotas oficiais](https://developers.google.com/apps-script/guides/services/
 | Sintoma | Causa provável | Correção |
 |---|---|---|
 | Menu **Monitoramento** não aparece | planilha não recarregada / `clasp push` não feito | F5 na planilha; conferir `clasp push` |
-| `Aba "config" não encontrada` | passo 1 do menu não executado | Menu → *Preparar planilha* |
+| `Aba "config" não encontrada` | `criarAbaConfig` não executada | Rodar `criarAbaConfig` (passo 8.6) |
 | `ANTHROPIC_API_KEY não configurada` | passo 2 não executado | Menu → *Configurar API key* |
 | `EMAILS_NOTIFICACAO ainda contém o e-mail modelo` | e-mail de exemplo não trocado | Editar a aba `config` |
 | `Chaves sem valor na aba "config"` | IDs dos prompts vazios | Preencher `DRIVE_FILE_ID_*` |
@@ -534,7 +543,8 @@ ver [quotas oficiais](https://developers.google.com/apps-script/guides/services/
 | `Nenhuma notícia` com buscas com erro no log | falha nas buscas web | Ver linha `[CLAUDE] Buscas web` no log |
 | E-mail não chega | escopo não autorizado, spam, quota | Reautorizar (rodar uma função no editor), checar spam e quota de e-mail |
 | `clasp push` → API not enabled | Apps Script API desligada | Ligar em script.google.com/home/usersettings |
-| `clasp create-script` recusa/duplica `appsscript.json` | já existe manifesto em `src/` | Use a Opção B (planilha manual + `.clasp.json`) |
+| `Não foi possível abrir a planilha SPREADSHEET_ID` | ID errado em `src/Ids.gs` ou conta sem acesso | Conferir o ID (passo 8.3) e a conta do `clasp login` |
+| Aba `config` criada em outra planilha / `Planilha não encontrada` | `src/Ids.gs` não criado ou com o ID modelo antes do `clasp push` (o código cai para a planilha vinculada) | Copiar `Ids-Template.gs` → `Ids.gs`, preencher o ID e dar `clasp push` |
 
 ---
 
@@ -542,7 +552,7 @@ ver [quotas oficiais](https://developers.google.com/apps-script/guides/services/
 
 - A **API key** vive só nas Script Properties. Nunca a coloque na planilha, em
   código, em issues ou em commits. Se vazar, revogue no Claude Console e regrave.
-- `.clasp.json` e `.clasprc.json` estão no `.gitignore` (contêm ID do projeto e
+- `.clasp.json`, `.clasprc.json` e `src/Ids.gs` estão no `.gitignore` (IDs do projeto e
   tokens de login).
 - O script roda com as **permissões da conta que o instalou**; compartilhe a
   planilha só com quem pode alterar a configuração (editores da planilha podem

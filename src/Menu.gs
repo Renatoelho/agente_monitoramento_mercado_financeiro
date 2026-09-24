@@ -9,7 +9,7 @@
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Monitoramento')
-    .addItem('1. Preparar planilha (aba config)', 'menuPrepararPlanilha')
+    .addItem('1. Criar aba config', 'menuCriarAbaConfig')
     .addItem('2. Configurar API key da Anthropic', 'menuConfigurarApiKey')
     .addItem('3. Instalar gatilho diário', 'menuInstalarGatilho')
     .addSeparator()
@@ -20,9 +20,9 @@ function onOpen() {
     .addToUi();
 }
 
-function menuPrepararPlanilha() {
-  const r = prepararPlanilha();
-  SpreadsheetApp.getUi().alert('Planilha preparada',
+function menuCriarAbaConfig() {
+  const r = criarAbaConfig();
+  SpreadsheetApp.getUi().alert('Aba config',
     (r.criada ? 'Aba "config" criada. ' : 'Aba "config" já existia. ') +
     r.chavesAdicionadas + ' chave(s) adicionada(s).\n\nPreencha os e-mails e os IDs dos prompts do Drive na aba.',
     SpreadsheetApp.getUi().ButtonSet.OK);

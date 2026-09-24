@@ -2,6 +2,9 @@
 .clasp.json
 .clasprc.json
 
+# ID da planilha (copiado de src/Ids-Template.gs)
+src/Ids.gs
+
 # Segredos / ambiente local
 .env
 *.key
