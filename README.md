@@ -329,8 +329,7 @@ Para personalizar: edite as constantes de cor no topo do `EmailBuilder.gs`, o
 
 - Conta Google (Gmail ou Workspace) e uma **API key da Anthropic** com créditos.
 - **Node.js** e o **CLASP** instalados (`npm install -g @google/clasp`). Comandos
-  abaixo usam a sintaxe do clasp 3.x (`open-script`). Em instalação portátil, use o caminho
-  completo do executável (ex.: `C:\Users\Renato\tools\node\clasp.cmd`).
+  abaixo usam a sintaxe do clasp 3.x (`open-script`).
 - **Google Apps Script API ligada** para a sua conta em
   <https://script.google.com/home/usersettings> (obrigatório para o clasp).
 
