@@ -1,4 +1,4 @@
-# agente_monitoramento_mercado_financeiro
+# Agente de Monitoramento do Mercado Financeiro
 
 Agente que **pesquisa diariamente notícias do mercado financeiro brasileiro** e envia
 um **relatório por e-mail**. Roda inteiramente dentro do Google Workspace
