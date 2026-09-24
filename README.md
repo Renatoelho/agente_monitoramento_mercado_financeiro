@@ -1,7 +1,7 @@
 # agente_monitoramento_mercado_financeiro
 
 Agente que **pesquisa diariamente notícias do mercado financeiro brasileiro** e envia
-um **relatório em HTML por e-mail**. Roda inteiramente dentro do Google Workspace
+um **relatório por e-mail**. Roda inteiramente dentro do Google Workspace
 (Google Apps Script vinculado a uma **planilha do Google Sheets**), usa a **API Claude
 (Anthropic)** para pesquisar na web e resumir, e é publicado via **CLASP**.
 
@@ -49,7 +49,7 @@ um **relatório em HTML por e-mail**. Roda inteiramente dentro do Google Workspa
 Fluxo de uma execução (gatilho diário, ou manual pelo menu da planilha):
 
 ```
-Gatilho diário (Apps Script, hora configurável — padrão 07h, America/Sao_Paulo)
+Gatilho diário (Apps Script, hora configurável, padrão 07h, America/Sao_Paulo)
         │
         ▼
 Config.gs ── lê a aba "config" da planilha + API key nas Script Properties
@@ -73,7 +73,7 @@ Comportamentos importantes:
 - **Sempre envia e-mail** ao terminar: relatório com notícias, aviso de "nenhuma
   notícia" ou e-mail de **falha** com a mensagem do erro e a etapa em que ocorreu.
   (Exceção: se a própria configuração estiver inválida não há destinatário
-  confiável — o erro vai só para o log do Apps Script e para o alerta do menu.)
+  confiável, o erro vai só para o log do Apps Script e para o alerta do menu.)
 - **Janela de pesquisa**: últimas `JANELA_HORAS` horas (padrão 24) a partir do
   momento da execução.
 - **Sem estado persistente**: não há log em planilha. O histórico técnico fica em
@@ -86,7 +86,7 @@ Comportamentos importantes:
 ### 2.1 Provedor e API
 
 Este projeto usa a **API Claude da Anthropic** (não é o app claude.ai nem o Claude
-Code) — mais especificamente a **Messages API**:
+Code), mais especificamente a **Messages API**:
 
 | Item | Valor |
 |---|---|
@@ -101,11 +101,11 @@ Code) — mais especificamente a **Messages API**:
 
 ### 2.2 Modelo utilizado
 
-**`claude-haiku-4-5-20251001` (Claude Haiku 4.5)** — escolhido por ser o de menor
+**`claude-haiku-4-5-20251001` (Claude Haiku 4.5)**, escolhido por ser o de menor
 custo/latência da família com suporte à ferramenta de busca na web, suficiente para
 pesquisar e resumir notícias. É o valor padrão da chave `ANTHROPIC_MODEL` na aba
 `config`; para usar outro modelo (ex.: um Sonnet, mais caro e mais capaz) basta trocar
-esse valor na planilha — sem redeploy. Confira os IDs vigentes na
+esse valor na planilha, sem redeploy. Confira os IDs vigentes na
 [documentação de modelos da Anthropic](https://docs.anthropic.com/en/docs/about-claude/models).
 
 ### 2.3 Como é feita a consulta na web
@@ -126,7 +126,7 @@ payload (`ClaudeClient.gs`):
   Anthropic executa as buscas e devolve os resultados ao modelo dentro da **mesma
   chamada HTTP**. O Apps Script **não** implementa loop de `tool_use`.
 - **`max_uses`** (`WEB_SEARCH_MAX_USES`, padrão 5) limita quantas buscas o modelo pode
-  fazer por execução — controla custo e tempo.
+  fazer por execução, o que controla custo e tempo.
 - O modelo é instruído (prompt system) a consultar os principais veículos
   brasileiros (G1, CNN Brasil, InfoMoney, Valor Econômico, Exame, Band, UOL, Estadão,
   Folha, Money Times, Investing.com Brasil etc.) e a **nunca inventar** notícias,
@@ -138,7 +138,7 @@ payload (`ClaudeClient.gs`):
 
 **Pré-requisito**: a busca na web precisa estar **habilitada na sua organização** no
 Claude Console (configurações da organização). Se não estiver, a API retorna erro
-(HTTP 400) na primeira execução — ver [Solução de problemas](#12-solução-de-problemas).
+(HTTP 400) na primeira execução (ver [Solução de problemas](#12-solução-de-problemas)).
 
 ### 2.4 Formato de saída esperado do modelo
 
@@ -232,7 +232,7 @@ executado como a conta que o instalou, e é essa conta que aparece como remetent
     ├── Setup.gs              criarAbaConfig(), salvarApiKey(), listarConfiguracao()
     ├── Menu.gs               onOpen() e ações do menu "Monitoramento"
     ├── Triggers.gs           instalar/remover/listar gatilho diário
-    ├── Orchestrator.gs       monitorarMercadoFinanceiro() — fluxo completo
+    ├── Orchestrator.gs       monitorarMercadoFinanceiro(), fluxo completo
     ├── PromptBuilder.gs      lê prompts do Drive e substitui placeholders
     ├── ClaudeClient.gs       chama a API Claude (Messages API + web_search)
     ├── EmailBuilder.gs       MODELO do e-mail (sucesso / sem notícias / erro)
@@ -250,13 +250,13 @@ congelada (`Object.freeze`), erros tipados com `etapa` (`ConfigError`, `PromptEr
 
 ### 5.1 Aba `config`
 
-Criada pela função `criarAbaConfig()` (executada no editor ou pelo menu **Monitoramento → 1. Criar aba config**; abre a planilha pelo `SPREADSHEET_ID` de `src/Ids.gs`),
-idempotente: nunca sobrescreve o que você editou, só acrescenta chaves que faltam).
+Criada pela função `criarAbaConfig()` (executada no editor ou pelo menu **Monitoramento → 1. Criar aba config**; abre a planilha pelo `SPREADSHEET_ID` de `src/Ids.gs`).
+A função é idempotente: nunca sobrescreve o que você editou, só acrescenta chaves que faltam.
 Colunas: `chave` · `valor` · `descricao`.
 
 | Chave | Padrão | Descrição |
 |---|---|---|
-| `EMAILS_NOTIFICACAO` | `seu-email@exemplo.com` | Destinatários, separados por vírgula. **Obrigatório trocar** — a execução é bloqueada enquanto o e-mail modelo estiver presente |
+| `EMAILS_NOTIFICACAO` | `seu-email@exemplo.com` | Destinatários, separados por vírgula. **Obrigatório trocar**. A execução é bloqueada enquanto o e-mail modelo estiver presente |
 | `JANELA_HORAS` | `24` | Janela de pesquisa, em horas |
 | `MAX_NOTICIAS_RELATORIO` | `20` | Máximo de notícias no e-mail |
 | `HORA_EXECUCAO` | `7` | Hora (0–23) do gatilho diário. Reinstale o gatilho após alterar |
@@ -275,7 +275,7 @@ reinstalar o gatilho).
 
 A única propriedade secreta é `ANTHROPIC_API_KEY`. Ela é gravada pelo menu
 **Monitoramento → 2. Configurar API key da Anthropic** (caixa de diálogo) e fica
-apenas nas **Script Properties** do projeto — nunca na planilha, no código ou no Git.
+apenas nas **Script Properties** do projeto, nunca na planilha, no código ou no Git.
 
 ---
 
@@ -284,11 +284,11 @@ apenas nas **Script Properties** do projeto — nunca na planilha, no código ou
 Os dois modelos estão em [`prompts/`](prompts/) e são lidos do **Google Drive** a cada
 execução (então dá para ajustar tom, veículos e regras sem redeploy).
 
-- **`prompt_system.txt`** — papel do modelo (assistente de pesquisa jornalística de
+- **`prompt_system.txt`**: papel do modelo (assistente de pesquisa jornalística de
   mercado financeiro brasileiro), lista de veículos, regras obrigatórias (janela de
   tempo, não inventar dados, não copiar texto, sem tags de citação, sem duplicatas,
   **resposta final somente em JSON**), schema JSON e critério do campo `prioridade`.
-- **`prompt_user.txt`** — pedido do dia, com dois placeholders substituídos pelo código:
+- **`prompt_user.txt`**: pedido do dia, com dois placeholders substituídos pelo código:
 
   | Placeholder | Valor |
   |---|---|
@@ -329,7 +329,7 @@ Para personalizar: edite as constantes de cor no topo do `EmailBuilder.gs`, o
 
 - Conta Google (Gmail ou Workspace) e uma **API key da Anthropic** com créditos.
 - **Node.js** e o **CLASP** instalados (`npm install -g @google/clasp`). Comandos
-  abaixo usam a sintaxe do clasp 3.x (`open-script`, `open-container`). Em instalação portátil, use o caminho
+  abaixo usam a sintaxe do clasp 3.x (`open-script`). Em instalação portátil, use o caminho
   completo do executável (ex.: `C:\Users\Renato\tools\node\clasp.cmd`).
 - **Google Apps Script API ligada** para a sua conta em
   <https://script.google.com/home/usersettings> (obrigatório para o clasp).
@@ -394,10 +394,11 @@ o **ID da planilha** e o **ID do Apps Script**.
      const SPREADSHEET_ID = 'COLE_AQUI_O_ID_DA_PLANILHA';
      ```
 
-     (`Ids-Template.gs` não é enviado ao Apps Script — ver `.claspignore`.)
+     (`Ids-Template.gs` não é enviado ao Apps Script, ver `.claspignore`.)
 
 Esses dois IDs são **tudo o que precisa ser cadastrado fora da planilha**; o restante
 da configuração fica na aba `config` (criada pelo próprio código no passo 8.6).
+
 ### 8.4 Enviar o código
 
 ```powershell
@@ -405,12 +406,11 @@ clasp push
 ```
 
 Se o clasp avisar que o `appsscript.json` remoto difere do local, confirme
-(`Y`) — o manifesto do repositório é o que vale (escopos, fuso, V8).
-Para abrir o editor do script e a planilha:
+(`Y`), o manifesto do repositório é o que vale (escopos, fuso, V8).
+Para abrir o editor do script:
 
 ```powershell
 clasp open-script      # editor do Apps Script
-clasp open-container   # a planilha vinculada
 ```
 
 ### 8.5 Subir os prompts para o Google Drive
@@ -421,12 +421,12 @@ clasp open-container   # a planilha vinculada
    entre `/d/` e `/view`:
    `https://drive.google.com/file/d/`**`1AbC...xyz`**`/view`.
 3. Guarde os dois IDs para o passo 8.7. (A conta dona da planilha precisa ter acesso
-   de leitura aos arquivos — normalmente já tem, pois é quem os enviou.)
+   de leitura aos arquivos, normalmente já tem, pois é quem os enviou.)
 
 ### 8.6 Criar a aba `config` e gravar a API key
 
 1. No editor do Apps Script (`clasp open-script`), selecione a função
-   **`criarAbaConfig`** na barra superior e clique em **Executar**. Ela abre a
+   **`criarAbaConfig`** (arquivo `src/Setup.gs`) na barra superior e clique em **Executar**. Ela abre a
    planilha pelo `SPREADSHEET_ID` e cria a aba `config` **já com todos os parâmetros**
    para preenchimento (seção 5.1).
    Na **primeira execução** o Google pede autorização dos escopos da seção 3.2 →
@@ -434,7 +434,8 @@ clasp open-container   # a planilha vinculada
    Permitir* (o aviso de "app não verificado" é esperado: o script é seu).
 2. Recarregue a planilha (F5): aparece o menu **Monitoramento**. (A mesma criação da
    aba também está em *Monitoramento → 1. Criar aba config*.)
-3. **Monitoramento → 2. Configurar API key da Anthropic** — cole a chave `sk-ant-...`.
+3. **Monitoramento → 2. Configurar API key da Anthropic**: cole a chave `sk-ant-...`.
+
 ### 8.7 Preencher a aba `config`
 
 Edite a coluna `valor`:
@@ -469,7 +470,6 @@ clasp login                 # autenticar
 clasp push                  # enviar código
 clasp pull                  # trazer código do editor
 clasp open-script           # abrir o editor do Apps Script
-clasp open-container        # abrir a planilha
 clasp status                # arquivos que serão enviados
 ```
 
@@ -478,7 +478,7 @@ clasp status                # arquivos que serão enviados
 ## 9. Teste ponta a ponta
 
 1. Certifique-se de que **Validar configuração** retorna sucesso.
-2. **Monitoramento → Executar agora (teste)** — confirma o aviso (gera custo e envia
+2. **Monitoramento → Executar agora (teste)**: confirma o aviso (gera custo e envia
    e-mail) e aguarde 1–3 minutos.
 3. **Esperado:**
    - alerta final `Concluído: N notícia(s), e-mail enviado.`;
@@ -512,14 +512,14 @@ buscas que entram no contexto. Para reduzir custo: diminua `WEB_SEARCH_MAX_USES`
 `JANELA_HORAS` e `MAX_NOTICIAS_RELATORIO`. Consulte os valores atuais em
 <https://www.anthropic.com/pricing> e acompanhe o consumo no Claude Console.
 
-**Limites do Google Apps Script** (contas gratuitas; Workspace tem limites maiores —
+**Limites do Google Apps Script** (contas gratuitas; Workspace tem limites maiores;
 ver [quotas oficiais](https://developers.google.com/apps-script/guides/services/quotas)):
 
 - tempo máximo de uma execução: **6 minutos** (a chamada à API costuma levar 30 s–3 min);
 - e-mails por dia via `MailApp`: **100** (Gmail) / **1.500** (Workspace) destinatários;
 - tempo total de gatilhos por dia: **90 min** (Gmail) / **6 h** (Workspace);
 - `UrlFetchApp`: tempo limite por requisição de cerca de 60 s no cliente HTTP do Apps
-  Script — se a API demorar mais que isso pode ocorrer falha de rede; nesse caso
+  Script, se a API demorar mais que isso pode ocorrer falha de rede; nesse caso
   reduza `WEB_SEARCH_MAX_USES`.
 
 ---
@@ -530,7 +530,7 @@ ver [quotas oficiais](https://developers.google.com/apps-script/guides/services/
 |---|---|---|
 | Menu **Monitoramento** não aparece | planilha não recarregada / `clasp push` não feito | F5 na planilha; conferir `clasp push` |
 | `Aba "config" não encontrada` | `criarAbaConfig` não executada | Rodar `criarAbaConfig` (passo 8.6) |
-| `ANTHROPIC_API_KEY não configurada` | passo 2 não executado | Menu → *Configurar API key* |
+| `ANTHROPIC_API_KEY não configurada` | API key ainda não gravada | Menu → *Configurar API key* |
 | `EMAILS_NOTIFICACAO ainda contém o e-mail modelo` | e-mail de exemplo não trocado | Editar a aba `config` |
 | `Chaves sem valor na aba "config"` | IDs dos prompts vazios | Preencher `DRIVE_FILE_ID_*` |
 | `PromptError` | ID errado, arquivo vazio ou sem permissão no Drive | Conferir IDs (passo 8.5) e acesso |
