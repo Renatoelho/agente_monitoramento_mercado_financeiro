@@ -11,6 +11,21 @@ um **relatório em HTML por e-mail**. Roda inteiramente dentro do Google Workspa
 
 ---
 
+## Exemplo do e-mail de notificação
+
+É assim que o relatório chega na caixa de entrada dos destinatários definidos em
+`EMAILS_NOTIFICACAO` (assunto: `DD/MM/AAAA - Monitoramento Mercado Financeiro`):
+
+![Exemplo do e-mail de notificação](assets/email-exemplo.png)
+
+> Imagem ilustrativa, com **dados fictícios**, gerada com o próprio `EmailBuilder.gs`.
+> O e-mail traz a janela pesquisada, o resumo geral do cenário e as notícias ordenadas
+> por prioridade (título, descrição, link, origem e data). O rodapé identifica a API
+> Claude e o modelo usado. Detalhes das variações (sem notícias e falha) na
+> [seção 7](#7-modelo-de-e-mail).
+
+---
+
 ## Sumário
 
 1. [Visão geral](#1-visão-geral)
@@ -204,6 +219,8 @@ executado como a conta que o instalou, e é essa conta que aparece como remetent
 ├── README.md                 esta documentação (única)
 ├── .gitignore                ignora .clasp.json / .clasprc.json
 ├── .claspignore              só envia *.gs e appsscript.json
+├── assets/
+│   └── email-exemplo.png     imagem do e-mail de exemplo (topo deste README)
 ├── prompts/
 │   ├── prompt_system.txt     modelo do prompt de sistema (subir para o Drive)
 │   └── prompt_user.txt       modelo do prompt de usuário (subir para o Drive)
